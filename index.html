@@ -42,15 +42,18 @@ and available here:
     return Math.round(x*power_of_10)/power_of_10
   }
 
-  function toColor(p, hue) {
+  function toColor(p, hue, scale) {
     // converts a scalar value p in [0,1] to a HSL color code string with base color hue
     if (p<0 || p>1) {
       throw sprintf("Error: p has value %.2f but should be in [0,1]", p)
     }
     var saturation = 100 // saturation percentage
     p = 1-p // invert so p=0 is light and p=1 is dark
-    var min_lightness = 50 // minimum percentage lightness, i.e. darkest possible color
+    var min_lightness = 0 // minimum percentage lightness, i.e. darkest possible color
     var lightness = (min_lightness + p*(100-min_lightness)) // lightness is proportional to p
+       if (lightness <99.5) {
+	   lightness *= scale
+       }
     return sprintf('hsl(%d,%s%%,%s%%)', hue, saturation, lightness)
   }
 
@@ -69,7 +72,7 @@ and available here:
       } else {
         var attn_wt = data.attn_dists[dec_idx][i];
       }
-      var background_color = toColor(attn_wt, yellowhue);
+      var background_color = toColor(attn_wt, yellowhue, 0.9);
       var css = 'background-color:' + background_color;
       css += ';display:inline'
       var word_html = word + ' '
@@ -92,7 +95,7 @@ and available here:
   }
 
 
-  function render_dec(div, data) {
+  function render_dec(div, data, dec_idx, dec_word) {
     // render the decoded summary
     var startix = 0;
     var endix = data.decoded_lst.length;
@@ -103,7 +106,20 @@ and available here:
       css = 'display:inline;'
       if (data.hasOwnProperty('p_gens')) {
         var p_gen = data.p_gens[i];
-        var background_color = toColor(p_gen, greenhue);
+          /* var background_color = toColor(p_gen, greenhue, 1.0);
+	   * css += 'background-color:' + background_color; */
+      } else {
+        var p_gen = null;
+      }
+      if (data.hasOwnProperty('self_dists')) {
+	  if (dec_idx == null) {
+	      var attn_wt = 0;
+	  } else {
+              var attn_wt = data.self_dists[dec_idx][i + 1];
+	  }
+        var background_color = toColor(attn_wt, yellowhue, 0.9);
+	  console.log(attn_wt)
+	  console.log(background_color)
         css += 'background-color:' + background_color;
       } else {
         var p_gen = null;
@@ -126,6 +142,7 @@ and available here:
     return function() {
       // Renders the article with the appropriate highlighting
       render_art(d3.select('#art'), gdata, dec_idx, dec_word);
+      render_dec(d3.select('#dec'), gdata, dec_idx, dec_word);
       // Show a tooltip giving value of p_gen
       if (p_gen != null) {
         gtooltip.text(round(p_gen, 3))
@@ -162,7 +179,7 @@ and available here:
       gdata = data; // store globally
       render_art(d3.select("#art"), gdata, null, null);
       render_abs(d3.select("#abs"), gdata);
-      render_dec(d3.select("#dec"), gdata);
+      render_dec(d3.select("#dec"), gdata, null, null);
     }
 
     function json_fail(d) {
@@ -202,11 +219,11 @@ and available here:
       <div id="art">
         article goes here
       </div>
-      <h2>Reference summary</h2>
+      <h2>Original</h2>
       <div id="abs">
         reference summary goes here
       </div>
-      <h2>Generated summary (highlighted = high generation probability)</h2>
+      <h2>Generation (highlighted = high generation probability)</h2>
       <div id="dec">
         generated summary goes here
       </div>
