@@ -8,7 +8,7 @@ Additionally, for pointer-generator networks such as that described in [this pap
 
 To run the visualizer, run
 ```
-python -m SimpleHTTPServer
+python server.py -l localhost -p 8000
 ```
 from this directory then navigate to `http://localhost:8000/` in browser. The visualizer will show some example data.
 
@@ -23,6 +23,7 @@ To visualize your own data, you need to replace `attn_vis_data.json` with a simi
     Note attention length must be <= length of `article_lst`.
     e.g. your article may have 500 words but you only fed the first 200 words into the model, thus attention length is 200.
     In this case the visualizer will mark the truncation point in the article.
+*  `self_dists`: a matrix of `len(decoded_lst) x len(decoded_lst)`. The rendering will auto shift the attention.
 *  `p_gens`: a list same length as `decoded_lst`, containing the generation probabilities.
 
 
